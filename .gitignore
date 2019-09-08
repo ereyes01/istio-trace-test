@@ -1,0 +1,2 @@
+# ignore vim swp files
+.*.sw[a-zA-Z]
