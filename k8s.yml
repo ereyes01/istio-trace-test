@@ -1,38 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: root
+  name: level3
   labels:
-    app: root
+    app: level3
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: root
+      app: level3
   template:
     metadata:
       labels:
-        app: root
+        app: level3
     spec:
       containers:
         - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
-          name: root
+          name: level3
           ports:
             - containerPort: 9090
               name: http
           env:
             - name: MESSAGE
-              value: "root"
-      restartPolicy: always
+              value: "level3"
+      restartPolicy: Always
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: root
+  name: level3
 spec:
-  type: ClusterIP
   selector:
-    app: root
+    app: level3
   ports:
   - name: http
     port: 80
@@ -41,45 +40,89 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: layer1
+  name: level2
   labels:
-    app: layer1
+    app: level2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: layer1
+      app: level2
   template:
     metadata:
       labels:
-        app: layer1
+        app: level2
     spec:
       containers:
         - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
-          name: layer1
+          name: level2
           ports:
             - containerPort: 9091
               name: http
           env:
             - name: MESSAGE
-              value: "layer1"
+              value: "level2"
             - name: NEXT_URL
-              value: "http://root"
+              value: "http://level3"
             - name: BIND
               value: ":9091"
             - name: FORWARD_CHANCE
-              value: "0.9"
-      restartPolicy: always
+              value: "0.5"
+      restartPolicy: Always
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: layer1
+  name: level2
 spec:
-  type: ClusterIP
   selector:
-    app: layer1
+    app: level2
   ports:
   - name: http
     port: 80
     targetPort: 9091
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: level1
+  labels:
+    app: level1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: level1
+  template:
+    metadata:
+      labels:
+        app: level1
+    spec:
+      containers:
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+          name: level1
+          ports:
+            - containerPort: 9092
+              name: http
+          env:
+            - name: MESSAGE
+              value: "level1"
+            - name: NEXT_URL
+              value: "http://level2"
+            - name: BIND
+              value: ":9092"
+            - name: FORWARD_CHANCE
+              value: "0.9"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: level1
+spec:
+  selector:
+    app: level1
+  ports:
+  - name: http
+    port: 80
+    targetPort: 9092
