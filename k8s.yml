@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root
+  labels:
+    app: root
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: root
+  template:
+    metadata:
+      labels:
+        app: root
+    spec:
+      containers:
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+          name: root
+          ports:
+            - containerPort: 9090
+              name: http
+          env:
+            - name: MESSAGE
+              value: "root"
+      restartPolicy: always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: root
+spec:
+  type: ClusterIP
+  selector:
+    app: root
+  ports:
+  - name: http
+    port: 80
+    targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: layer1
+  labels:
+    app: layer1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: layer1
+  template:
+    metadata:
+      labels:
+        app: layer1
+    spec:
+      containers:
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+          name: layer1
+          ports:
+            - containerPort: 9091
+              name: http
+          env:
+            - name: MESSAGE
+              value: "layer1"
+            - name: NEXT_URL
+              value: "http://root"
+            - name: BIND
+              value: ":9091"
+            - name: FORWARD_CHANCE
+              value: "0.9"
+      restartPolicy: always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: layer1
+spec:
+  type: ClusterIP
+  selector:
+    app: layer1
+  ports:
+  - name: http
+    port: 80
+    targetPort: 9091
