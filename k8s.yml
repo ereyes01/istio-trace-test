@@ -5,7 +5,7 @@ metadata:
   labels:
     app: level3
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: level3
@@ -44,7 +44,7 @@ metadata:
   labels:
     app: level2
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: level2
@@ -89,7 +89,7 @@ metadata:
   labels:
     app: level1
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: level1
