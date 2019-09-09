@@ -9,21 +9,32 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace"
 )
 
 var (
-	message        string
-	nextURL        string
-	forwardChance  float64
-	errorChance    float64
-	slowDownChance float64
-	bind           string
+	message            string
+	nextURL            string
+	forwardChance      float64
+	errorChance        float64
+	slowDownChance     float64
+	bind               string
+	googleCloudProject string
+	limitedTrace       string
+	enableTrace        string
 )
 
 func initParams() {
 	message = os.Getenv("MESSAGE")
 	nextURL = os.Getenv("NEXT_URL")
 	bind = os.Getenv("BIND")
+	googleCloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	limitedTrace = os.Getenv("LIMITED_TRACE")
+	enableTrace = os.Getenv("ENABLE_TRACE")
 	forwardChanceStr := os.Getenv("FORWARD_CHANCE")
 	errorChanceStr := os.Getenv("ERROR_CHANCE")
 	slowDownChanceStr := os.Getenv("SLOWDOWN_CHANCE")
@@ -52,9 +63,38 @@ func initParams() {
 	}
 }
 
+func setupTrace() *http.Client {
+	if enableTrace == "" {
+		return http.DefaultClient
+	}
+
+	// Create and register a OpenCensus Stackdriver Trace exporter.
+	exporter, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: googleCloudProject,
+	})
+	if err != nil {
+		log.Fatal("create stackdriver trace exporter", err)
+	}
+	trace.RegisterExporter(exporter)
+
+	if limitedTrace == "" {
+		// will cause StackDriver spam under load!
+		trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	}
+
+	return &http.Client{
+		Transport: &ochttp.Transport{
+			// Use Google Cloud propagation format.
+			Propagation: &propagation.HTTPFormat{},
+		},
+	}
+}
+
 func main() {
 	initParams()
 	rand.Seed(time.Now().UnixNano())
+
+	client := setupTrace()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if rand.Float64() < errorChance {
@@ -69,7 +109,18 @@ func main() {
 			return
 		}
 
-		resp, err := http.Get(nextURL)
+		req, err := http.NewRequest("GET", nextURL, nil)
+		if err != nil {
+			errStr := fmt.Sprintf("(forward: %s) failed to create request: %s", nextURL, err.Error())
+			http.Error(w, errStr, http.StatusInternalServerError)
+			return
+		}
+
+		// The trace ID from the incoming request will be
+		// propagated to the outgoing request.
+		req = req.WithContext(r.Context())
+
+		resp, err := client.Do(req)
 		if err != nil {
 			errStr := fmt.Sprintf("(forward: %s) failed to get: %s", nextURL, err.Error())
 			http.Error(w, errStr, http.StatusInternalServerError)

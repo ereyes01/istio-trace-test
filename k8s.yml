@@ -15,7 +15,7 @@ spec:
         app: level3
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:dc73a4654e3688472d6e5e7cb2f3a04911c56bf563036d7735501797efb4f420
           name: level3
           ports:
             - containerPort: 9090
@@ -56,7 +56,7 @@ spec:
         app: level2
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:dc73a4654e3688472d6e5e7cb2f3a04911c56bf563036d7735501797efb4f420
           name: level2
           ports:
             - containerPort: 9091
@@ -103,7 +103,7 @@ spec:
         app: level1
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:dc73a4654e3688472d6e5e7cb2f3a04911c56bf563036d7735501797efb4f420
           name: level1
           ports:
             - containerPort: 9092
