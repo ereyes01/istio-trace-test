@@ -8,13 +8,16 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
-	message       string
-	nextURL       string
-	forwardChance float64
-	bind          string
+	message        string
+	nextURL        string
+	forwardChance  float64
+	errorChance    float64
+	slowDownChance float64
+	bind           string
 )
 
 func initParams() {
@@ -22,21 +25,43 @@ func initParams() {
 	nextURL = os.Getenv("NEXT_URL")
 	bind = os.Getenv("BIND")
 	forwardChanceStr := os.Getenv("FORWARD_CHANCE")
-	if forwardChanceStr == "" {
-		return
-	}
+	errorChanceStr := os.Getenv("ERROR_CHANCE")
+	slowDownChanceStr := os.Getenv("SLOWDOWN_CHANCE")
 
 	var err error
-	forwardChance, err = strconv.ParseFloat(forwardChanceStr, 64)
-	if err != nil {
-		log.Fatal("invalid FORWARD_CHANCE:", err)
+
+	if forwardChanceStr != "" {
+		forwardChance, err = strconv.ParseFloat(forwardChanceStr, 64)
+		if err != nil {
+			log.Fatal("invalid FORWARD_CHANCE:", err)
+		}
+	}
+
+	if errorChanceStr != "" {
+		errorChance, err = strconv.ParseFloat(errorChanceStr, 64)
+		if err != nil {
+			log.Fatal("invalid ERROR_CHANCE:", err)
+		}
+	}
+
+	if slowDownChanceStr != "" {
+		slowDownChance, err = strconv.ParseFloat(slowDownChanceStr, 64)
+		if err != nil {
+			log.Fatal("invalid ERROR_CHANCE:", err)
+		}
 	}
 }
 
 func main() {
 	initParams()
+	rand.Seed(time.Now().UnixNano())
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if rand.Float64() < errorChance {
+			http.Error(w, "unlucky draw, inject error", http.StatusTeapot)
+			return
+		}
+
 		// not forwarding, just return the message
 		if rand.Float64() > forwardChance || nextURL == "" {
 			w.Header().Set("Content-Type", "text/plain")
@@ -61,8 +86,12 @@ func main() {
 		downStream, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			errStr := fmt.Sprintf("(forward: %s) error reading body: %s", nextURL, err.Error())
-			http.Error(w, errStr, resp.StatusCode)
+			http.Error(w, errStr, http.StatusInternalServerError)
 			return
+		}
+
+		if rand.Float64() < slowDownChance {
+			time.Sleep(50 * time.Millisecond)
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
