@@ -15,7 +15,7 @@ spec:
         app: level3
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
           name: level3
           ports:
             - containerPort: 9090
@@ -23,6 +23,8 @@ spec:
           env:
             - name: MESSAGE
               value: "level3"
+            - name: SLOWDOWN_CHANCE
+              value: "0.1"
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -54,7 +56,7 @@ spec:
         app: level2
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
           name: level2
           ports:
             - containerPort: 9091
@@ -68,6 +70,8 @@ spec:
               value: ":9091"
             - name: FORWARD_CHANCE
               value: "0.5"
+            - name: SLOWDOWN_CHANCE
+              value: "0.1"
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -99,7 +103,7 @@ spec:
         app: level1
     spec:
       containers:
-        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:62b63d9d16d19c93609e5751b49ceadd8b1e0032ac742779fb737a3cb47420bb
+        - image: gcr.io/engaged-proxy-170419/forwarder@sha256:a6c3aad06b69f9b5fe4121557f91a5d0adae48d8a306386b1cd0da9afaf11b0b
           name: level1
           ports:
             - containerPort: 9092
@@ -113,6 +117,8 @@ spec:
               value: ":9092"
             - name: FORWARD_CHANCE
               value: "0.9"
+            - name: ERROR_CHANCE
+              value: "0.05"
       restartPolicy: Always
 ---
 apiVersion: v1
